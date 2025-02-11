@@ -137,7 +137,7 @@ def main():
     plot_filename = f"out/latest_plot_{timestamp}.png"
 
     # Create figure and axes
-    fig, ax1 = mpf.plot(
+    fig, axes = mpf.plot(
         stock_df,
         type="candle",
         style=style,
@@ -146,15 +146,17 @@ def main():
         ylabel="Stock Price (USD)",  # Right Y-axis
         addplot=add_plots,  # Add blue dots for Premium
         figsize=(20, 10),
-        returnfig=True  # This returns the figure & axis for further modifications
+        returnfig=True  # Returns the figure & list of axes
     )
 
-    # Create secondary Y-axis for Premium on the left
-    if unusual_df is not None and not unusual_df.empty:
-        ax2 = ax1.twinx()
-        ax2.set_ylabel("Premium (USD)", fontsize=12, color="blue")
-        ax2.yaxis.set_major_formatter(plt.FuncFormatter(format_premium))  # Format as K/M
-        ax2.tick_params(axis="y", labelcolor="blue")  # Set label color to blue
+    # Extract first axis (main stock chart)
+    ax1 = axes[0]  # Fix: Extract the first axis from list
+    ax2 = ax1.twinx()  # Correctly create secondary Y-axis
+
+    # Set labels for Premium axis
+    ax2.set_ylabel("Premium (USD)", fontsize=12, color="blue")
+    ax2.yaxis.set_major_formatter(plt.FuncFormatter(format_premium))  # Format as K/M
+    ax2.tick_params(axis="y", labelcolor="blue")  # Set label color to blue
 
     # Save the updated plot
     fig.savefig(plot_filename)

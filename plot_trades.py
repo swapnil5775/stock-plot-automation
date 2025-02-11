@@ -58,12 +58,15 @@ def fetch_unusual_trades(stock_df):
     if os.path.exists(unusual_csv_path):
         df = pd.read_csv(unusual_csv_path)
 
-        # Convert 'Time' to datetime and set index
+        # Convert 'Time' to datetime
         df['datetime'] = pd.to_datetime(df['Time']).dt.tz_convert('US/Eastern')
-        df.set_index('datetime', inplace=True)
 
-        # Drop missing Premium values to avoid x/y mismatch
-        df.dropna(subset=['Premium', 'Size'], inplace=True)
+        # Merge unusual trades with stock data (to keep all stock data timestamps)
+        df = stock_df[['Close']].merge(df, how="left", on="datetime")
+
+        # Ensure 'Premium' and 'Size' exist, filling missing values with NaN
+        df['Premium'] = df['Premium'].fillna(0)
+        df['Size'] = df['Size'].fillna(0)
 
         # Scale dot size based on Premium values (Ensure it matches length of Price)
         df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (50, 500))
@@ -106,7 +109,7 @@ def main():
     if unusual_df is not None and not unusual_df.empty:
         add_plots.append(
             mpf.make_addplot(
-                unusual_df["Price"],  # Plot only existing timestamps
+                unusual_df["Close"],  # Use close price for alignment
                 scatter=True,  # Only show dots
                 markersize=unusual_df["DotSize"],  # Bigger dots for higher premium
                 marker="o", 

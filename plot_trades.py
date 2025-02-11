@@ -49,29 +49,26 @@ def fetch_stock_data():
     return df
 
 # -------------------------------------------------------------------
-# 2. Function to load unusual trades and prepare them for plotting
+# 2. Function to load unusual trades and filter to match stock data
 # -------------------------------------------------------------------
-def fetch_unusual_trades():
+def fetch_unusual_trades(stock_df):
     unusual_csv_path = 'data/unusual_trades.csv'
     if os.path.exists(unusual_csv_path):
         df = pd.read_csv(unusual_csv_path)
 
-        # Convert 'Time' to datetime and convert timezone if needed
-        df['datetime'] = pd.to_datetime(df['Time'])
-        
-        # If timestamps are already timezone-aware, use tz_convert
-        if df['datetime'].dt.tz is not None:
-            df['datetime'] = df['datetime'].dt.tz_convert('US/Eastern')
-        else:
-            df['datetime'] = df['datetime'].dt.tz_localize('US/Eastern')
+        # Convert 'Time' to datetime
+        df['datetime'] = pd.to_datetime(df['Time']).dt.tz_convert('US/Eastern')
 
         # Ensure 'Premium' column exists and fill missing values with 0
         df['Premium'] = df['Premium'].fillna(0)
 
-        # Scale the dot size for plotting (normalize within reasonable range)
+        # Filter timestamps to match stock data (prevents "x and y size mismatch" errors)
+        df = df[df['datetime'].isin(stock_df.index)]
+
+        # Scale dot size (normalize within reasonable range)
         df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (30, 300))
 
-        return df
+        return df if not df.empty else None
     return None
 
 # -------------------------------------------------------------------
@@ -92,7 +89,7 @@ def main():
     stock_df.to_csv(stock_csv_path, index_label='Time')
 
     # Fetch unusual trades
-    unusual_df = fetch_unusual_trades()
+    unusual_df = fetch_unusual_trades(stock_df)
 
     # Prepare plot additions (if unusual trades exist)
     add_plots = None

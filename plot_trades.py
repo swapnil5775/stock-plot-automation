@@ -49,7 +49,7 @@ def fetch_stock_data():
     return df
 
 # -------------------------------------------------------------------
-# 2. Function to load unusual trades and filter to match stock data
+# 2. Function to load unusual trades and align timestamps correctly
 # -------------------------------------------------------------------
 def fetch_unusual_trades(stock_df):
     unusual_csv_path = 'data/unusual_trades.csv'
@@ -62,8 +62,8 @@ def fetch_unusual_trades(stock_df):
         # Ensure 'Premium' column exists and fill missing values with 0
         df['Premium'] = df['Premium'].fillna(0)
 
-        # Filter timestamps to match stock data (prevents "x and y size mismatch" errors)
-        df = df[df['datetime'].isin(stock_df.index)]
+        # Align unusual trades to stock data timestamps (Prevent "x and y size mismatch" error)
+        df = df.set_index('datetime').reindex(stock_df.index, method='nearest')
 
         # Scale dot size (normalize within reasonable range)
         df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (30, 300))

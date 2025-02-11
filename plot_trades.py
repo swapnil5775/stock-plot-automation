@@ -2,6 +2,7 @@ import os
 import requests
 import pandas as pd
 import mplfinance as mpf
+import numpy as np
 from datetime import datetime
 
 # -------------------------------------------------------------------
@@ -16,19 +17,14 @@ def fetch_stock_data():
     }
     response = requests.get(url, params=params, timeout=10)
 
-    # Raise error if response is unsuccessful
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
         print(f"API Request Failed: {err}")
-        return pd.DataFrame()  # Return empty DataFrame if API fails
+        return pd.DataFrame()
 
     json_data = response.json()
     
-    # Debug: Print API response metadata
-    print(f"API Response Metadata: {json_data.keys()}")
-    print(f"Results Count: {json_data.get('resultsCount', 0)}")
-
     results = json_data.get('results', [])
     if not results:
         print("Warning: No data received from Polygon API.")
@@ -49,85 +45,97 @@ def fetch_stock_data():
     
     # Select only required columns
     df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
-
-    # Debug: Print first few rows
-    print("Fetched DataFrame:\n", df.head())
-
+    
     return df
 
 # -------------------------------------------------------------------
-# 2. Function to verify and debug CSV writing
+# 2. Function to load unusual trades and prepare them for plotting
 # -------------------------------------------------------------------
-def verify_csv(file_path):
-    if os.path.exists(file_path):
-        print(f"✅ CSV file successfully created: {file_path}")
-        try:
-            df = pd.read_csv(file_path)
-            print("CSV File Content Preview:\n", df.head())
-        except Exception as e:
-            print(f"Error reading the CSV file: {e}")
-    else:
-        print(f"❌ CSV file not found at: {file_path}")
+def fetch_unusual_trades():
+    unusual_csv_path = 'data/unusual_trades.csv'
+    if os.path.exists(unusual_csv_path):
+        df = pd.read_csv(unusual_csv_path)
+
+        # Convert 'Time' to datetime and set index
+        df['datetime'] = pd.to_datetime(df['Time']).dt.tz_localize('US/Eastern')
+
+        # Ensure 'Premium' column exists and fill missing values with 0
+        df['Premium'] = df['Premium'].fillna(0)
+
+        # Scale the dot size for plotting (normalize within reasonable range)
+        df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (10, 200))
+
+        return df
+    return None
 
 # -------------------------------------------------------------------
 # 3. Main execution: Fetch, save CSV, verify, and plot candlestick chart
 # -------------------------------------------------------------------
 def main():
-    # Ensure required directories exist
     os.makedirs('data', exist_ok=True)
     os.makedirs('out', exist_ok=True)
 
-    # Fetch the latest stock data from the API
+    # Fetch stock data
     stock_df = fetch_stock_data()
-
-    # Check if data exists before saving
     if stock_df.empty:
         print("Error: No data fetched, skipping CSV write and chart plot.")
         return
 
-    # Save DataFrame to CSV with EST timestamps
+    # Save stock data to CSV
     stock_csv_path = 'data/stock_data.csv'
     stock_df.to_csv(stock_csv_path, index_label='Time')
-    print(f"✅ Stock data saved to {stock_csv_path}")
 
-    # Verify CSV content
-    verify_csv(stock_csv_path)
+    # Fetch unusual trades
+    unusual_df = fetch_unusual_trades()
 
-    # Define market colors: green for upward candles, red for downward candles.
+    # Prepare plot additions (if unusual trades exist)
+    add_plots = None
+    if unusual_df is not None and not unusual_df.empty:
+        # Create scatter plot for unusual trades
+        add_plots = mpf.make_addplot(
+            unusual_df['Price'], 
+            scatter=True, 
+            markersize=unusual_df['DotSize'],  # Dot size based on Premium
+            marker='o', 
+            color='blue'
+        )
+
+    # Define market colors
     mc = mpf.make_marketcolors(up='green', down='red', edge='inherit', wick='inherit', volume='in')
 
-    # Custom rc settings to place the price axis on the right
+    # Custom rc settings
     custom_rc = {
-        'ytick.labelleft': False,   # Hide left y-axis labels
-        'ytick.labelright': True,   # Show right y-axis labels
-        'ytick.left': False,        # Hide left y-axis ticks
-        'ytick.right': True         # Show right y-axis ticks
+        'ytick.labelleft': False,
+        'ytick.labelright': True,
+        'ytick.left': False,
+        'ytick.right': True
     }
 
     style = mpf.make_mpf_style(marketcolors=mc, rc=custom_rc)
 
-    # Generate the candlestick chart with volume sub-plot
+    # Generate chart
     plot_filename = 'out/latest_plot.png'
     mpf.plot(
         stock_df,
         type='candle',
         style=style,
-        title="AAPL 5-Minute Candlestick Chart",
+        title="AAPL 5-Minute Candlestick Chart with Unusual Trades",
         volume=True,
-        ylabel='Price (USD)',        # Price label on the y-axis (will appear on the right)
+        ylabel='Price (USD)',
         ylabel_lower='Volume',
+        addplot=add_plots,  # Add blue dots
         savefig=plot_filename
     )
 
-    print(f"✅ Candlestick chart saved to {plot_filename}")
+    print(f"✅ Candlestick chart with unusual trades saved to {plot_filename}")
 
-    # Create HTML file with cache-busting timestamp
+    # Update HTML file with cache-busting timestamp
     import time
     timestamp = int(time.time())
     html_content = f"""<html>
 <head><title>Latest Stock Chart</title></head>
 <body>
-<h1>Latest AAPL 5-Minute Candlestick Chart</h1>
+<h1>Latest AAPL 5-Minute Candlestick Chart with Unusual Trades</h1>
 <img src="latest_plot.png?v={timestamp}" alt="Stock Chart" />
 </body>
 </html>"""

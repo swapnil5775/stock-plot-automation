@@ -1,5 +1,6 @@
 import os
 import requests
+import time
 import pandas as pd
 import mplfinance as mpf
 from datetime import datetime
@@ -80,16 +81,16 @@ def main():
         savefig='out/latest_plot.png'
     )
     
-    # Create a simple HTML file to display the generated chart
-    html_content = """<html>
+timestamp = int(time.time())  # Generate a unique timestamp
+html_content = f"""<html>
 <head><title>Latest Stock Chart</title></head>
 <body>
 <h1>Latest AAPL 5-Minute Candlestick Chart</h1>
-<img src="latest_plot.png" alt="Stock Chart" />
+<img src="latest_plot.png?v={timestamp}" alt="Stock Chart" />
 </body>
 </html>"""
-    with open('out/index.html', 'w') as f:
-        f.write(html_content)
-
+with open('out/index.html', 'w') as f:
+    f.write(html_content)
+    
 if __name__ == "__main__":
     main()

@@ -8,8 +8,3 @@ html_content = f"""<html>
 <img src="latest_plot_large.png?v={timestamp}" alt="Stock Chart" width="100%" />
 </body>
 </html>"""
-
-with open('out/index.html', 'w') as f:
-    f.write(html_content)
-
-print(f"✅ HTML file updated with latest chart: out/index.html")

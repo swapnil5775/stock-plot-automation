@@ -63,11 +63,17 @@ def fetch_unusual_trades(stock_df):
         # Ensure 'Premium' column exists and fill missing values with 0
         df['Premium'] = df['Premium'].fillna(0)
 
-        # Align unusual trades to stock data timestamps
-        df = df.set_index('datetime').reindex(stock_df.index, method='nearest')
+        # Align unusual trades to stock data timestamps (but don't create a line)
+        df = df.set_index('datetime').reindex(stock_df.index)
+
+        # Set missing values to NaN to avoid line drawing
+        df['Price'] = df['Price'].where(df['Price'].notna(), np.nan)
 
         # Scale dot size (normalize within reasonable range)
         df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (50, 300))
+
+        # Debug: Print the unusual trades with matched timestamps
+        print("✅ Processed Unusual Trades:\n", df[['Price', 'Premium', 'DotSize']])
 
         return df if not df.empty else None
     return None
@@ -99,7 +105,7 @@ def main():
         add_plots = [
             mpf.make_addplot(
                 unusual_df['Price'], 
-                type='scatter',  # Only show dots (no connecting line)
+                scatter=True,  # Only show dots (no connecting line)
                 markersize=unusual_df['DotSize'],  # Bigger dots for higher premium
                 marker='o', 
                 color='blue'

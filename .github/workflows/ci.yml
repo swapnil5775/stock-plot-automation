@@ -33,8 +33,8 @@ jobs:
 
       - name: Commit updated site
         run: |
-          git config user.name "github-actions[bot]"
+           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html latest_plot.png
+          git add out/index.html out/latest_plot.png
           git commit -m "Update chart [skip-ci]" || echo "No changes to commit"
           git push

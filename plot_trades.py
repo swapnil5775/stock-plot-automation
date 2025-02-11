@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 def main():
     # Read CSVs from 'data' folder
@@ -18,9 +19,11 @@ def main():
     plt.title("Stock Price with Unusual Trades")
     plt.xlabel("Time")
     plt.ylabel("Price")
+
     
     # Save the plot
     plt.tight_layout()
+    os.makedirs('out', exist_ok=True)  # Ensures 'out/' folder is created (if not present)
     plt.savefig('out/latest_plot.png')
     
     # Create a simple HTML file referencing the PNG

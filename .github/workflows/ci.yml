@@ -32,6 +32,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stock_data.csv out/index.html out/latest_plot_large.png
+          git add data/stock_data.csv out/index.html out/latest_plot_*.png
           git commit -m "Update chart & stock data [skip-ci]" || echo "No changes to commit"
           git push

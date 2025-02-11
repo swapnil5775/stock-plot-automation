@@ -61,17 +61,15 @@ def fetch_unusual_trades(stock_df):
         # Convert 'Time' to datetime
         df['datetime'] = pd.to_datetime(df['Time']).dt.tz_convert('US/Eastern')
 
-        # Ensure 'Premium' column exists and fill missing values with 0
+        # Merge with stock_df to keep all timestamps
+        df = pd.merge(stock_df, df, how="right", on="datetime")
+
+        # Fill missing values
         df['Premium'] = df['Premium'].fillna(0)
-
-        # Align unusual trades to stock data timestamps
-        df = df.set_index('datetime').reindex(stock_df.index)
-
-        # Set missing values to NaN to avoid line drawing
-        df['Price'] = df['Price'].where(df['Price'].notna(), np.nan)
+        df['Size'] = df['Size'].fillna(0)
 
         # Scale dot size (normalize within reasonable range)
-        df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (50, 300))
+        df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (50, 500))
 
         return df if not df.empty else None
     return None
@@ -107,9 +105,9 @@ def main():
     unusual_df = fetch_unusual_trades(stock_df)
 
     # Prepare addplot for unusual trades
-    add_plots = None
+    add_plots = []
     if unusual_df is not None and not unusual_df.empty:
-        add_plots = [
+        add_plots.append(
             mpf.make_addplot(
                 unusual_df["Price"], 
                 scatter=True,  # Only show dots
@@ -117,7 +115,19 @@ def main():
                 marker="o", 
                 color="blue"
             )
-        ]
+        )
+
+    # Prepare addplot for Size as a bar chart
+    if unusual_df is not None and not unusual_df.empty:
+        add_plots.append(
+            mpf.make_addplot(
+                unusual_df["Size"], 
+                type="bar",  # Vertical bars
+                color="purple",
+                panel=2,  # Draw in a separate panel below volume
+                ylabel="Trade Size"
+            )
+        )
 
     # Define market colors
     mc = mpf.make_marketcolors(up="green", down="red", edge="inherit", wick="inherit", volume="in")
@@ -144,8 +154,9 @@ def main():
         title="AAPL 5-Minute Candlestick Chart with Unusual Trades",
         volume=True,
         ylabel="Stock Price (USD)",  # Right Y-axis
-        addplot=add_plots,  # Add blue dots for Premium
-        figsize=(20, 10),
+        addplot=add_plots,  # Add blue dots for Premium & Size bars
+        figsize=(20, 12),
+        panel_ratios=(6, 2, 2),  # Increase third panel for size
         returnfig=True  # Returns the figure & list of axes
     )
 
@@ -157,7 +168,6 @@ def main():
     ax2.set_ylabel("Premium (USD)", fontsize=12, color="blue")
     ax2.yaxis.set_major_formatter(plt.FuncFormatter(format_premium))  # Format as K/M
     ax2.tick_params(axis="y", labelcolor="blue")  # Set label color to blue
-    ax2.set_ylim(unusual_df['Premium'].min(), unusual_df['Premium'].max())  # Set proper scale
 
     # Save the updated plot
     fig.savefig(plot_filename)

@@ -2,12 +2,16 @@ name: Generate and Deploy Chart (Main Branch Only)
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+    # Grant the job write access to push changes back to the repository
+    permissions:
+      contents: write
+
     steps:
       - name: Check out repo
         uses: actions/checkout@v3

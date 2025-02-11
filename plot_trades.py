@@ -58,15 +58,12 @@ def fetch_unusual_trades(stock_df):
     if os.path.exists(unusual_csv_path):
         df = pd.read_csv(unusual_csv_path)
 
-        # Convert 'Time' to datetime
+        # Convert 'Time' to datetime and set index
         df['datetime'] = pd.to_datetime(df['Time']).dt.tz_convert('US/Eastern')
+        df.set_index('datetime', inplace=True)
 
-        # Keep only timestamps that exist in stock_df
-        df = df[df['datetime'].isin(stock_df.index)]
-
-        # Ensure 'Premium' and 'Size' exist, filling missing values
-        df['Premium'] = df['Premium'].fillna(0)
-        df['Size'] = df['Size'].fillna(0)
+        # Drop missing Premium values to avoid x/y mismatch
+        df.dropna(subset=['Premium', 'Size'], inplace=True)
 
         # Scale dot size based on Premium values (Ensure it matches length of Price)
         df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (50, 500))
@@ -104,12 +101,12 @@ def main():
     # Fetch unusual trades
     unusual_df = fetch_unusual_trades(stock_df)
 
-    # Prepare addplot for unusual trades
+    # Prepare addplot for unusual trades (Only for existing timestamps)
     add_plots = []
     if unusual_df is not None and not unusual_df.empty:
         add_plots.append(
             mpf.make_addplot(
-                unusual_df["Price"], 
+                unusual_df["Price"],  # Plot only existing timestamps
                 scatter=True,  # Only show dots
                 markersize=unusual_df["DotSize"],  # Bigger dots for higher premium
                 marker="o", 
@@ -117,11 +114,11 @@ def main():
             )
         )
 
-    # Prepare addplot for Trade Size as a bar chart (Ensure Data Matches)
+    # Prepare addplot for Trade Size as a bar chart (Only existing timestamps)
     if unusual_df is not None and not unusual_df.empty:
         add_plots.append(
             mpf.make_addplot(
-                unusual_df["Size"], 
+                unusual_df["Size"],  # Ensure only matching timestamps
                 type="bar",  # Vertical bars
                 color="purple",
                 panel=2,  # Draw in a separate panel below volume

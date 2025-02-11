@@ -88,6 +88,7 @@ def format_premium(value, _):
 
 # -------------------------------------------------------------------
 # 4. Main execution: Fetch, save CSV, verify, and plot candlestick chart
+# -------------------------------------------------------------------
 def main():
     os.makedirs('data', exist_ok=True)
     os.makedirs('out', exist_ok=True)
@@ -105,17 +106,47 @@ def main():
     # Fetch unusual trades
     unusual_df = fetch_unusual_trades(stock_df)
 
-    # Create the figure and axis objects
-    fig, ax1 = plt.subplots(figsize=(20, 10))
+    # Prepare addplot for unusual trades
+    add_plots = None
+    if unusual_df is not None and not unusual_df.empty:
+        add_plots = [
+            mpf.make_addplot(
+                unusual_df["Price"], 
+                scatter=True,  # Only show dots
+                markersize=unusual_df["DotSize"],  # Bigger dots for higher premium
+                marker="o", 
+                color="blue"
+            )
+        ]
 
-    # Plot candlestick chart
-    mpf.plot(
+    # Define market colors
+    mc = mpf.make_marketcolors(up="green", down="red", edge="inherit", wick="inherit", volume="in")
+
+    # Custom rc settings
+    custom_rc = {
+        "ytick.labelleft": True,   # Enable left Y-axis for Premium
+        "ytick.labelright": True,  # Enable right Y-axis for Stock Price
+        "ytick.left": True,        # Show left Y-axis ticks
+        "ytick.right": True        # Show right Y-axis ticks
+    }
+
+    style = mpf.make_mpf_style(marketcolors=mc, rc=custom_rc)
+
+    # Generate dynamic filename with timestamp
+    timestamp = int(time.time())  # Unique timestamp
+    plot_filename = f"out/latest_plot_{timestamp}.png"
+
+    # Create figure and axes
+    fig, ax1 = mpf.plot(
         stock_df,
-        type='candle',
-        ax=ax1,
+        type="candle",
+        style=style,
+        title="AAPL 5-Minute Candlestick Chart with Unusual Trades",
         volume=True,
-        ylabel="Price (USD)",  # Stock price on the right
-        ylabel_lower="Volume"
+        ylabel="Stock Price (USD)",  # Right Y-axis
+        addplot=add_plots,  # Add blue dots for Premium
+        figsize=(20, 10),
+        returnfig=True  # This returns the figure & axis for further modifications
     )
 
     # Create secondary Y-axis for Premium on the left
@@ -125,21 +156,8 @@ def main():
         ax2.yaxis.set_major_formatter(plt.FuncFormatter(format_premium))  # Format as K/M
         ax2.tick_params(axis="y", labelcolor="blue")  # Set label color to blue
 
-        # Scatter plot for Premium (without a connecting line)
-        ax2.scatter(
-            unusual_df.index,
-            unusual_df["Premium"],
-            s=unusual_df["DotSize"],  # Bigger dots for higher premium
-            color="blue",
-            label="Premium Trades"
-        )
-
-    # Generate dynamic filename with timestamp
-    timestamp = int(time.time())  # Unique timestamp
-    plot_filename = f'out/latest_plot_{timestamp}.png'
-
-    # Save the plot
-    plt.savefig(plot_filename)
+    # Save the updated plot
+    fig.savefig(plot_filename)
     print(f"✅ Large Candlestick chart saved to {plot_filename}")
 
     # Update HTML file with dynamic filename
@@ -151,7 +169,7 @@ def main():
 </body>
 </html>"""
 
-    with open('out/index.html', 'w') as f:
+    with open("out/index.html", "w") as f:
         f.write(html_content)
 
     print(f"✅ HTML file updated with latest chart: {plot_filename}")

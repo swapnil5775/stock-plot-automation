@@ -157,6 +157,7 @@ def main():
     ax2.set_ylabel("Premium (USD)", fontsize=12, color="blue")
     ax2.yaxis.set_major_formatter(plt.FuncFormatter(format_premium))  # Format as K/M
     ax2.tick_params(axis="y", labelcolor="blue")  # Set label color to blue
+    ax2.set_ylim(unusual_df['Premium'].min(), unusual_df['Premium'].max())  # Set proper scale
 
     # Save the updated plot
     fig.savefig(plot_filename)

@@ -104,8 +104,8 @@ def main():
     stock_csv_path = 'data/stock_data.csv'
     stock_df.to_csv(stock_csv_path, index_label='Time')
 
-    # Fetch unusual trades
-    unusual_df = fetch_unusual_trades()
+    # Fetch unusual trades (Pass stock_df as argument)
+    unusual_df = fetch_unusual_trades(stock_df)
 
     # Prepare addplot for unusual trades (Only for actual unusual trades)
     add_plots = []
@@ -175,20 +175,3 @@ def main():
     # Save the updated plot
     fig.savefig(plot_filename)
     print(f"✅ Large Candlestick chart saved to {plot_filename}")
-
-    # Update HTML file with dynamic filename
-    html_content = f"""<html>
-<head><title>Latest Stock Chart</title></head>
-<body>
-<h1>Latest AAPL 5-Minute Candlestick Chart with Unusual Trades</h1>
-<img src="{plot_filename}" alt="Stock Chart" width="100%" />
-</body>
-</html>"""
-
-    with open("out/index.html", "w") as f:
-        f.write(html_content)
-
-    print(f"✅ HTML file updated with latest chart: {plot_filename}")
-
-if __name__ == "__main__":
-    main()

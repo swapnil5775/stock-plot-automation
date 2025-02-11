@@ -63,7 +63,7 @@ def fetch_unusual_trades():
         df['Premium'] = df['Premium'].fillna(0)
 
         # Scale the dot size for plotting (normalize within reasonable range)
-        df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (10, 200))
+        df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (30, 300))
 
         return df
     return None
@@ -113,8 +113,8 @@ def main():
 
     style = mpf.make_mpf_style(marketcolors=mc, rc=custom_rc)
 
-    # Generate chart
-    plot_filename = 'out/latest_plot.png'
+    # Generate large full-screen chart
+    plot_filename = 'out/latest_plot_large.png'
     mpf.plot(
         stock_df,
         type='candle',
@@ -124,10 +124,11 @@ def main():
         ylabel='Price (USD)',
         ylabel_lower='Volume',
         addplot=add_plots,  # Add blue dots
+        figsize=(20, 10),  # MAKE IT FULL SIZE
         savefig=plot_filename
     )
 
-    print(f"✅ Candlestick chart with unusual trades saved to {plot_filename}")
+    print(f"✅ Large Candlestick chart saved to {plot_filename}")
 
     # Update HTML file with cache-busting timestamp
     import time
@@ -136,14 +137,14 @@ def main():
 <head><title>Latest Stock Chart</title></head>
 <body>
 <h1>Latest AAPL 5-Minute Candlestick Chart with Unusual Trades</h1>
-<img src="latest_plot.png?v={timestamp}" alt="Stock Chart" />
+<img src="latest_plot_large.png?v={timestamp}" alt="Stock Chart" width="100%" />
 </body>
 </html>"""
     
     with open('out/index.html', 'w') as f:
         f.write(html_content)
 
-    print(f"✅ HTML file updated with latest chart: out/index.html")
+    print(f"✅ HTML file updated with latest large chart: out/index.html")
 
 if __name__ == "__main__":
     main()

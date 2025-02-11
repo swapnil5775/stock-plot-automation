@@ -60,10 +60,10 @@ def main():
     
     # Custom rc settings to place the price axis on the right
     custom_rc = {
-        'axes.labelleft': False,
-        'axes.labelright': True,
-        'ytick.left': False,
-        'ytick.right': True
+        'ytick.labelleft': False,   # Hide left y-axis labels
+        'ytick.labelright': True,   # Show right y-axis labels
+        'ytick.left': False,        # Hide left y-axis ticks
+        'ytick.right': True         # Show right y-axis ticks
     }
     
     style = mpf.make_mpf_style(marketcolors=mc, rc=custom_rc)

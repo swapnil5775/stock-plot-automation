@@ -53,20 +53,17 @@ def fetch_stock_data():
 # -------------------------------------------------------------------
 # 2. Function to load unusual trades and align timestamps correctly
 # -------------------------------------------------------------------
-def fetch_unusual_trades(stock_df):
+def fetch_unusual_trades():
     unusual_csv_path = 'data/unusual_trades.csv'
     if os.path.exists(unusual_csv_path):
         df = pd.read_csv(unusual_csv_path)
 
-        # Convert 'Time' to datetime
+        # Convert 'Time' to datetime and set index
         df['datetime'] = pd.to_datetime(df['Time']).dt.tz_convert('US/Eastern')
+        df.set_index('datetime', inplace=True)
 
-        # Merge unusual trades with stock data (to keep all stock data timestamps)
-        df = stock_df[['Close']].merge(df, how="left", on="datetime")
-
-        # Ensure 'Premium' and 'Size' exist, filling missing values with NaN
-        df['Premium'] = df['Premium'].fillna(0)
-        df['Size'] = df['Size'].fillna(0)
+        # Keep only rows where Premium is nonzero
+        df = df[df['Premium'] > 0]
 
         # Scale dot size based on Premium values (Ensure it matches length of Price)
         df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (50, 500))
@@ -102,14 +99,14 @@ def main():
     stock_df.to_csv(stock_csv_path, index_label='Time')
 
     # Fetch unusual trades
-    unusual_df = fetch_unusual_trades(stock_df)
+    unusual_df = fetch_unusual_trades()
 
-    # Prepare addplot for unusual trades (Only for existing timestamps)
+    # Prepare addplot for unusual trades (Only for actual unusual trades)
     add_plots = []
     if unusual_df is not None and not unusual_df.empty:
         add_plots.append(
             mpf.make_addplot(
-                unusual_df["Close"],  # Use close price for alignment
+                unusual_df["Price"],  # Only show actual trades
                 scatter=True,  # Only show dots
                 markersize=unusual_df["DotSize"],  # Bigger dots for higher premium
                 marker="o", 

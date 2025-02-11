@@ -11,10 +11,6 @@ jobs:
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
-        
-        # Optionally, skip building if it's the workflow bot's own commit
-        # to avoid infinite loop:
-        # if: "! contains(github.event.head_commit.message, '[skip-ci]')"
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -28,13 +24,18 @@ jobs:
 
       - name: Generate plot
         run: python plot_trades.py
-        # Suppose your script now directly writes 'index.html' + 'latest_plot.png'
-        # in the repository root rather than "out/" folder
 
       - name: Commit updated site
         run: |
-           git config user.name "github-actions[bot]"
+          # Configure Git
+          git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Stage our out/ folder (with index.html + PNG)
           git add out/index.html out/latest_plot.png
+          
+          # Commit if there's a change
           git commit -m "Update chart [skip-ci]" || echo "No changes to commit"
+          
+          # Push back to main
           git push

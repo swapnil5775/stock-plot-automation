@@ -8,7 +8,6 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    # Grant the job write access to push changes back to the repository
     permissions:
       contents: write
 
@@ -31,7 +30,6 @@ jobs:
 
       - name: Commit updated site
         run: |
-          # Configure Git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add out/index.html out/latest_plot.png

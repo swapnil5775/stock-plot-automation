@@ -53,23 +53,29 @@ def fetch_stock_data():
 # -------------------------------------------------------------------
 # 2. Function to load unusual trades and align timestamps correctly
 # -------------------------------------------------------------------
-def fetch_unusual_trades():
+def fetch_unusual_trades(stock_df):
     unusual_csv_path = 'data/unusual_trades.csv'
     if os.path.exists(unusual_csv_path):
         df = pd.read_csv(unusual_csv_path)
 
-        # Convert 'Time' to datetime and set index
-        df['datetime'] = pd.to_datetime(df['Time']).dt.tz_convert('US/Eastern')
-        df.set_index('datetime', inplace=True)
+        # Convert 'Time' to datetime and set timezone
+        df['datetime'] = pd.to_datetime(df['Time']).dt.tz_localize('America/New_York', ambiguous='NaT', nonexistent='shift_forward')
 
-        # Keep only rows where Premium is nonzero
+        # Round timestamps to the nearest 5-minute interval available in stock_df
+        df['datetime'] = df['datetime'].dt.round('5min')
+
+        # Ensure only timestamps that exist in stock_df are included
+        df = df[df['datetime'].isin(stock_df.index)]
+
+        # Keep only nonzero premium rows
         df = df[df['Premium'] > 0]
 
-        # Scale dot size based on Premium values (Ensure it matches length of Price)
+        # Scale dot size based on Premium values
         df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (50, 500))
 
         return df if not df.empty else None
     return None
+
 
 # -------------------------------------------------------------------
 # 3. Function to format Premium values (convert to "K" or "M")

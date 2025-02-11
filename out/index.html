@@ -1,15 +1,7 @@
-  html_content = f"""<html>
+html_content = f"""<html>
 <head><title>Latest Stock Chart</title></head>
 <body>
 <h1>Latest AAPL 5-Minute Candlestick Chart with Unusual Trades</h1>
-<img src="{plot_filename}" alt="Stock Chart" width="100%" />
+<img src="{plot_filename}?v={timestamp}" alt="Stock Chart" width="100%" />
 </body>
 </html>"""
-
-    with open("out/index.html", "w") as f:
-        f.write(html_content)
-
-    print(f"✅ HTML file updated with latest chart: {plot_filename}")
-
-if __name__ == "__main__":
-    main()

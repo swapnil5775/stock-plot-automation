@@ -1,0 +1,50 @@
+name: Stock Data Plot Automation
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at 00:00 UTC. Adjust as needed.
+  workflow_dispatch:     # Lets you manually run it from the Actions tab
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate Plot
+        run: |
+          python plot_trades.py
+          # The script saves 'index.html' and 'latest_plot.png' in 'out/' folder
+
+      - name: Deploy to gh-pages branch
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create a new folder for deployment
+          mkdir gh-pages
+          cp out/index.html gh-pages/
+          cp out/latest_plot.png gh-pages/
+          
+          # Initialize new git repo in that folder
+          cd gh-pages
+          git init
+          git checkout -b gh-pages
+          git add .
+          git commit -m "Deploy from GitHub Actions"
+          
+          # Force push to gh-pages branch
+          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages:gh-pages

@@ -30,12 +30,6 @@ jobs:
           # Configure Git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Stage our out/ folder (with index.html + PNG)
           git add out/index.html out/latest_plot.png
-          
-          # Commit if there's a change
           git commit -m "Update chart [skip-ci]" || echo "No changes to commit"
-          
-          # Push back to main
           git push

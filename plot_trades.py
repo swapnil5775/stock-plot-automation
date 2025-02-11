@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import time  # For dynamic filenames
-
 # -------------------------------------------------------------------
 # 1. Function to fetch 5-minute candlestick data from Polygon.io API
 # -------------------------------------------------------------------

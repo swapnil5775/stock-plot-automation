@@ -56,8 +56,14 @@ def fetch_unusual_trades():
     if os.path.exists(unusual_csv_path):
         df = pd.read_csv(unusual_csv_path)
 
-        # Convert 'Time' to datetime and set index
-        df['datetime'] = pd.to_datetime(df['Time']).dt.tz_localize('US/Eastern')
+        # Convert 'Time' to datetime and convert timezone if needed
+        df['datetime'] = pd.to_datetime(df['Time'])
+        
+        # If timestamps are already timezone-aware, use tz_convert
+        if df['datetime'].dt.tz is not None:
+            df['datetime'] = df['datetime'].dt.tz_convert('US/Eastern')
+        else:
+            df['datetime'] = df['datetime'].dt.tz_localize('US/Eastern')
 
         # Ensure 'Premium' column exists and fill missing values with 0
         df['Premium'] = df['Premium'].fillna(0)

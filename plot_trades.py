@@ -61,14 +61,14 @@ def fetch_unusual_trades(stock_df):
         # Convert 'Time' to datetime
         df['datetime'] = pd.to_datetime(df['Time']).dt.tz_convert('US/Eastern')
 
-        # Merge with stock_df to keep all timestamps
-        df = pd.merge(stock_df, df, how="right", on="datetime")
+        # Keep only timestamps that exist in stock_df
+        df = df[df['datetime'].isin(stock_df.index)]
 
-        # Fill missing values
+        # Ensure 'Premium' and 'Size' exist, filling missing values
         df['Premium'] = df['Premium'].fillna(0)
         df['Size'] = df['Size'].fillna(0)
 
-        # Scale dot size (normalize within reasonable range)
+        # Scale dot size based on Premium values (Ensure it matches length of Price)
         df['DotSize'] = np.interp(df['Premium'], (df['Premium'].min(), df['Premium'].max()), (50, 500))
 
         return df if not df.empty else None
@@ -117,7 +117,7 @@ def main():
             )
         )
 
-    # Prepare addplot for Size as a bar chart
+    # Prepare addplot for Trade Size as a bar chart (Ensure Data Matches)
     if unusual_df is not None and not unusual_df.empty:
         add_plots.append(
             mpf.make_addplot(

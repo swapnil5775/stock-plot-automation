@@ -1,7 +1,61 @@
-html_content = f"""<html>
-<head><title>Latest Stock Chart</title></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Chart</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
 <body>
-<h1>Latest AAPL 5-Minute Candlestick Chart with Unusual Trades</h1>
-<img src="{plot_filename}?v={timestamp}" alt="Stock Chart" width="100%" />
+    <h2>Stock Chart Generator</h2>
+
+    <!-- Form for Date Selection -->
+    <label for="start_date">Start Date:</label>
+    <input type="date" id="start_date">
+    
+    <label for="end_date">End Date:</label>
+    <input type="date" id="end_date">
+    
+    <button onclick="fetchData()">Get Stock Data</button>
+
+    <!-- Chart will be displayed here -->
+    <div id="chart"></div>
+
+    <script>
+        function fetchData() {
+            let startDate = document.getElementById('start_date').value;
+            let endDate = document.getElementById('end_date').value;
+
+            if (!startDate || !endDate) {
+                alert("Please select a valid date range.");
+                return;
+            }
+
+            fetch('/api/get_stock_data', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ticker: 'AAPL', start_date: startDate, end_date: endDate })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                let times = data.map(d => new Date(d.datetime));
+                let trace = {
+                    x: times,
+                    open: data.map(d => d.Open),
+                    high: data.map(d => d.High),
+                    low: data.map(d => d.Low),
+                    close: data.map(d => d.Close),
+                    type: 'candlestick'
+                };
+
+                Plotly.newPlot('chart', [trace]);
+            });
+        }
+    </script>
 </body>
-</html>"""
+</html>
